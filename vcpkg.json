@@ -1,0 +1,21 @@
+{
+  "name": "sovereign-optimization",
+  "version": "0.1.0",
+  "description": "Sovereign Optimization Platform - Solver Center",
+  "dependencies": [
+    "boost-system",
+    "boost-thread",
+    "boost-filesystem",
+    "crow",
+    "nlohmann-json",
+    "cpr",
+    "gtest"
+  ],
+  "builtin-baseline": "2024-01-15",
+  "overrides": [
+    {
+      "name": "crow",
+      "version": "1.0+4"
+    }
+  ]
+}

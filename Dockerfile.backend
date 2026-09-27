@@ -1,0 +1,50 @@
+# Backend Dockerfile
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    libboost-all-dev \
+    nlohmann-json3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Crow
+RUN git clone https://github.com/CrowCpp/Crow.git /tmp/crow \
+    && cd /tmp/crow \
+    && cmake -B build -DCROW_BUILD_EXAMPLES=OFF -DCROW_BUILD_TESTS=OFF \
+    && cmake --build build --target install \
+    && rm -rf /tmp/crow
+
+WORKDIR /app
+
+# Copy CMake files
+COPY CMakeLists.txt .
+COPY src/ ./src/
+COPY backend/ ./backend/
+COPY include/ ./include/
+
+# Build
+RUN cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SERVER=ON -DBUILD_TESTS=OFF \
+    && cmake --build build --target sop_server -j$(nproc)
+
+# Runtime stage
+FROM ubuntu:22.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    libboost-system1.74 \
+    libboost-thread1.74 \
+    libboost-filesystem1.74 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app/build/backend/sop_server ./sop_server
+COPY --from=builder /usr/local/include/crow* /usr/local/include/
+COPY --from=builder /usr/local/include/nlohmann /usr/local/include/
+
+EXPOSE 8080
+
+ENTRYPOINT ["./sop_server", "8080"]
